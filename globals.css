@@ -1,0 +1,11 @@
+/* styles/globals.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Optionally define some default styles for html/body */
+html, body {
+  padding: 0;
+  margin: 0;
+  font-family: sans-serif; /* or import a Google Font in _app.tsx */
+}

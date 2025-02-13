@@ -1,0 +1,10 @@
+/* styles/theme.css */
+.site-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.text-accent {
+  color: #6D28D9; /* primaryPurple */
+}
+/* etc. */
