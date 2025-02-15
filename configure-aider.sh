@@ -2,7 +2,7 @@
 
 # Configure Aider with dual model setup
 aider --architect gemini-2.0-flash-thinking-exp \
-      --editor-model claude-3.5-sonnet-20241022 \
+      --editor-model claude-3-5-sonnet-20241022 \
       --api-key google=$GEMINI_API_KEY \
       --anthropic-api-key $CLAUDE_API_KEY \
       --model-settings-file ~/.aider/model_config.yml \
