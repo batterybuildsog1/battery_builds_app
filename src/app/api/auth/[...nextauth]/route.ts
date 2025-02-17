@@ -8,6 +8,22 @@ const handler = NextAuth({
       clientSecret: process.env.GITHUB_SECRET || '',
     })
   ],
+  pages: {
+    signIn: '/auth/signin',
+    error: '/auth/error'
+  },
+  debug: process.env.NODE_ENV === 'development',
+  callbacks: {
+    async session({ session, token }) {
+      return session;
+    },
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = user.id;
+      }
+      return token;
+    }
+  },
   secret: process.env.NEXTAUTH_SECRET,
 });
 
