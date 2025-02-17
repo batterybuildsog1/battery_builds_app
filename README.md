@@ -123,6 +123,38 @@ If you encounter npm install issues or module resolution errors:
        }
        ```
 
+### Complete Dependency Reset and Material UI Setup
+
+If you're experiencing persistent dependency issues or missing Material UI modules:
+
+1. Clean up existing dependencies and caches:
+   ```bash
+   # Remove dependency and build folders
+   rm -rf node_modules
+   rm -rf .next
+   rm package-lock.json
+   
+   # Clean npm cache
+   npm cache clean --force
+   ```
+
+2. Reinstall base dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Install Material UI dependencies:
+   ```bash
+   npm install @mui/material @mui/icons-material @emotion/react @emotion/styled
+   ```
+
+4. Start the development server:
+   ```bash
+   npm run dev
+   ```
+
+These steps will resolve most dependency-related issues, including missing module errors for '@mui/icons-material' and any dependency conflicts.
+
 ### React Diff Viewer Dependency Issues
 
 If you encounter dependency conflicts with react-diff-viewer:
