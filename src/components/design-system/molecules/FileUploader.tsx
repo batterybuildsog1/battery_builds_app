@@ -21,7 +21,7 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [error, setError] = useState<string>("");
 
-  const validateFile = useCallback((file: File): boolean => {
+  const validateFile = useCallback((file: File) => {
     if (!file.type.match(accept)) {
       const errorMessage = "Please upload a valid PDF file.";
       setError(errorMessage);
@@ -35,9 +35,8 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
       onError?.(errorMessage);
       return false;
     }
-
     return true;
-  };
+  }, [accept, maxSize, onError, setError]);
 
   const handleFile = (file: File) => {
     setError("");
