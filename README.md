@@ -49,6 +49,39 @@ To resolve this:
 
 Note: Using --force or --legacy-peer-deps is not recommended for production as it may lead to unexpected behavior. Always prefer matching compatible versions.
 
+### React Diff Viewer Dependency Issues
+
+If you encounter dependency conflicts with react-diff-viewer:
+
+1. Check for newer compatible versions:
+   ```bash
+   npm view react-diff-viewer versions
+   ```
+
+2. If a newer version compatible with React 18 exists:
+   - Update your package.json with the compatible version:
+     ```json
+     {
+       "dependencies": {
+         "react-diff-viewer": "^3.x.x" // Replace with compatible version
+       }
+     }
+     ```
+   - Reinstall dependencies:
+     ```bash
+     npm install
+     ```
+
+3. If no compatible version exists:
+   - Consider using alternative packages that support React 18, such as:
+     - react-diff
+     - react-diff-view
+     - monaco-react-diff
+   - Or temporarily install with legacy peer deps (not recommended for production):
+     ```bash
+     npm install --legacy-peer-deps
+     ```
+
 ### Authentication Setup
 
 1. Set up a Google Cloud Project and configure OAuth 2.0:
