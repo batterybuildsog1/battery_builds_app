@@ -83,11 +83,6 @@ export default function ManualJPage() {
   return (
     <div className="min-h-screen bg-gray-50 relative">
       {process.env.NODE_ENV === 'development' && <DeveloperDashboard />}
-      <div className="w-full bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto">
-          <AuthStatus />
-        </div>
-      </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="bg-white rounded-lg shadow">
@@ -101,8 +96,7 @@ export default function ManualJPage() {
               </div>
             ) : !session ? (
               <div className="text-center py-8">
-                <p className="text-gray-600 mb-4">Please sign in to use the Manual J Calculator</p>
-                <AuthStatus />
+                <p className="text-gray-600">Please use the sign in button in the header to access the Manual J Calculator</p>
               </div>
             ) : !projectId ? (
               <div className="space-y-8">
