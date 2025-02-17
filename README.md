@@ -2,6 +2,33 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
+### Environment Setup
+
+This project requires several environment variables to be set up in a `.env` file at the root of the project. The following variables are required:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+DATABASE_URL=your_database_url
+NEXTAUTH_URL=your_nextauth_url
+NEXTAUTH_SECRET=your_nextauth_secret
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+GEMINI_API_KEY=your_gemini_api_key
+```
+
+Contact the project administrator for the actual values of these environment variables.
+
+### Supabase Setup
+
+1. Ensure you have access to the Supabase project
+2. Configure authentication providers in the Supabase dashboard:
+   - Enable Google OAuth
+   - Set up the callback URLs for your development and production environments
+3. Update your `.env` file with the provided Supabase credentials
+
+### Running the Development Server
+
 First, run the development server:
 
 ```bash
@@ -33,4 +60,16 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
+### Deployment Configuration
+
+1. When deploying to Vercel, ensure all environment variables are properly configured in your Vercel project settings
+2. Set up the production URLs in your Supabase dashboard for authentication
+3. Update the NEXTAUTH_URL to match your production domain
+
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Additional Documentation
+
+For more detailed information about the project setup and implementation:
+- Refer to `checklist.md` for the complete setup checklist
+- See `what-we-have-done.md` for development context and progress tracking

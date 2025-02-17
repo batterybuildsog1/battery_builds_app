@@ -1,0 +1,12 @@
+textmodels:
+  gemini-2.0-flash-thinking-exp:
+    max_output_tokens: 12000
+    reasoning_effort: 3
+    top_k: 40
+    context_management: dynamic
+  claude-3.5-sonnet-20241022:
+    max_output_tokens: 8000
+    temperature: 0.2
+    stop_sequences:
+      - "\\n\\nHuman:"
+      - "\\n\\nAssistant:"
