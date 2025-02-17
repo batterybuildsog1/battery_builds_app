@@ -8,10 +8,10 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   fullWidth?: boolean;
 }
 
-const InputWrapper = styled.div<{ fullWidth?: boolean }>`
+const InputWrapper = styled.div<{ $fullWidth?: boolean }>`
   display: flex;
   flex-direction: column;
-  width: ${props => props.fullWidth ? '100%' : 'auto'};
+  width: ${props => props.$fullWidth ? '100%' : 'auto'};
 `;
 
 const Label = styled.label`
@@ -49,10 +49,10 @@ const StyledInput = styled.input<{ $hasError?: boolean; $isFocused?: boolean }>`
   }
 `;
 
-const HelperText = styled.span<{ isError?: boolean }>`
+const HelperText = styled.span<{ $isError?: boolean }>`
   font-size: 0.75rem;
   margin-top: 0.25rem;
-  color: ${props => props.isError ? '#EF4444' : '#6B7280'};
+  color: ${props => props.$isError ? '#EF4444' : '#6B7280'};
 `;
 
 const Input = forwardRef<HTMLInputElement, InputProps>(({
@@ -76,7 +76,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(({
   };
 
   return (
-    <InputWrapper fullWidth={fullWidth} className={className}>
+    <InputWrapper $fullWidth={fullWidth} className={className}>
       {label && <Label htmlFor={props.id}>{label}</Label>}
       <StyledInput
         ref={ref}
@@ -93,7 +93,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(({
       {(error || helperText) && (
         <HelperText
           id={`${props.id}-helper-text`}
-          isError={!!error}
+          $isError={!!error}
         >
           {error || helperText}
         </HelperText>

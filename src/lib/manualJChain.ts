@@ -10,7 +10,7 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 // Initialize reasoning model with flash-thinking for enhanced analytical capabilities
 const reasoningModel = genAI.getGenerativeModel({ 
-  model: "gemini-2.0-flash-thinking-exp",
+  model: "gemini-2.0-pro-exp-02-05",
   generationConfig: {
     temperature: 0.7,
     topK: 40,
@@ -21,7 +21,7 @@ const reasoningModel = genAI.getGenerativeModel({
 
 // Initialize vision model for PDF processing and data extraction
 const visionModel = genAI.getGenerativeModel({ 
-  model: "gemini-pro-vision"
+  model: "gemini-2.0-flash-thinking-exp-01-21"
 });
 
 /**
@@ -185,8 +185,8 @@ async function generateVisualizationData(results: string): Promise<{ chartData: 
  * 4. Visualization data generation using gemini-2.0-flash-thinking-exp for data formatting
  * 
  * Each step utilizes specialized models:
- * - PDF Analysis: gemini-pro-vision for visual document understanding
- * - Calculations & Logic: gemini-2.0-flash-thinking-exp for analytical processing
+ * - PDF Analysis: gemini-2.0-flash-thinking-exp-01-21 for visual document understanding
+ * - Calculations & Logic: gemini-2.0-pro-exp-02-05 for analytical processing
  * 
  * @param pdfBuffer - Buffer containing the building plans PDF (converted to base64 for API compatibility)
  * @param location - Geographic location for climate considerations
