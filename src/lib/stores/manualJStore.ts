@@ -1,6 +1,18 @@
 import { create } from 'zustand';
 
+type ProgressStatus = 'pending' | 'in_progress' | 'completed' | 'error';
+
+type ProcessingStep = {
+  fileValidation: ProgressStatus;
+  pdfProcessing: ProgressStatus;
+  dataExtraction: ProgressStatus;
+  climateAnalysis: ProgressStatus;
+  calculations: ProgressStatus;
+  resultsGeneration: ProgressStatus;
+};
+
 interface ManualJState {
+  progress: ProcessingStep;
   pdfFile: File | null;
   location: string;
   isLoading: boolean;
@@ -18,6 +30,7 @@ interface ManualJStore extends ManualJState {
   setProjectId: (projectId: string | null) => void;
   setAssumptions: (assumptions: Record<string, any> | null) => void;
   setResults: (results: Record<string, any> | null) => void;
+  setProgress: (step: keyof ProcessingStep, status: ProgressStatus) => void;
   reset: () => void;
 }
 
@@ -29,6 +42,14 @@ const initialState: ManualJState = {
   projectId: null,
   assumptions: null,
   results: null,
+  progress: {
+    fileValidation: 'pending',
+    pdfProcessing: 'pending',
+    dataExtraction: 'pending',
+    climateAnalysis: 'pending',
+    calculations: 'pending',
+    resultsGeneration: 'pending'
+  },
 };
 
 export const useManualJStore = create<ManualJStore>((set) => ({
@@ -47,6 +68,13 @@ export const useManualJStore = create<ManualJStore>((set) => ({
   setAssumptions: (assumptions) => set({ assumptions }),
   
   setResults: (results) => set({ results }),
+  
+  setProgress: (step, status) => set((state) => ({
+    progress: {
+      ...state.progress,
+      [step]: status
+    }
+  })),
   
   reset: () => set(initialState),
 }));

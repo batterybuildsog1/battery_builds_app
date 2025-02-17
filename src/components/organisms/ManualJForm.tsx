@@ -56,6 +56,23 @@ const ManualJForm: React.FC<ManualJFormProps> = ({
         body: formData,
       });
 
+      // Check if response is ok and verify content type
+      if (!response.ok) {
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Server error occurred');
+        } else {
+          throw new Error(`Server error: ${response.status}`);
+        }
+      }
+
+      // Verify JSON content type before parsing
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('Server returned non-JSON response');
+      }
+
       const data = await response.json();
       
       if (data.error) {
@@ -63,8 +80,9 @@ const ManualJForm: React.FC<ManualJFormProps> = ({
       }
 
       onSubmitSuccess?.(data.projectId);
-    } catch (err: any) {
-      setError(err.message || 'An error occurred while processing your request.');
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'An error occurred while processing your request.';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -87,12 +105,15 @@ const ManualJForm: React.FC<ManualJFormProps> = ({
 
         <Input
           id="location"
+          name="location"
+          type="text"
           label="Location (Zip or Address)"
           placeholder="Optional – if not given, you will be prompted"
           value={location}
           onChange={(e) => setLocation(e.target.value)}
           fullWidth
           error={error}
+          aria-label="Location input"
         />
       </div>
 

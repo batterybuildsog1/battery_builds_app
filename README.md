@@ -49,6 +49,40 @@ To resolve this:
 
 Note: Using --force or --legacy-peer-deps is not recommended for production as it may lead to unexpected behavior. Always prefer matching compatible versions.
 
+### General Dependency and Module Resolution Issues
+
+If you encounter npm install issues or module resolution errors:
+
+1. Clear project caches and reinstall:
+   ```bash
+   # Remove caches and dependencies
+   rm -rf .next
+   rm -rf node_modules
+   rm -rf package-lock.json
+   
+   # Clear npm cache (optional)
+   npm cache clean --force
+   
+   # Reinstall dependencies
+   npm install
+   ```
+
+2. File Casing Issues:
+   - Ensure all file names exactly match their import statements
+   - Be especially careful with CSS module imports (e.g., `styles.module.css`)
+   - Remember that some systems (like Linux) are case-sensitive
+   
+3. Styling Dependencies:
+   - If you encounter conflicts between stylelint and prettier:
+     - Consider using prettier-plugin-tailwindcss instead of stylelint-config-prettier
+     - Install with: `npm install -D prettier-plugin-tailwindcss`
+     - Add to your prettier config:
+       ```json
+       {
+         "plugins": ["prettier-plugin-tailwindcss"]
+       }
+       ```
+
 ### React Diff Viewer Dependency Issues
 
 If you encounter dependency conflicts with react-diff-viewer:
@@ -81,6 +115,92 @@ If you encounter dependency conflicts with react-diff-viewer:
      ```bash
      npm install --legacy-peer-deps
      ```
+
+### API and React Component Troubleshooting
+
+#### API Response Issues
+
+If you're receiving HTML responses instead of JSON from API endpoints:
+
+1. Check API Route Response Headers:
+   - Ensure your API routes explicitly set the content type:
+     ```typescript
+     res.setHeader('Content-Type', 'application/json');
+     ```
+   - Verify error handling returns JSON responses:
+     ```typescript
+     res.status(400).json({ error: 'Error message' });
+     ```
+
+2. File Upload Endpoint Verification:
+   - Test endpoints with Postman or curl:
+     ```bash
+     curl -X POST http://localhost:3000/api/manual-j/init \
+       -H "Content-Type: multipart/form-data" \
+       -F "file=@/path/to/test.pdf"
+     ```
+   - Check network tab in browser dev tools for:
+     - Correct Content-Type headers
+     - Request payload format
+     - Response headers and body
+
+3. Session/Authentication Issues:
+   - Ensure protected routes properly handle unauthenticated requests with JSON responses
+   - Check for middleware redirects that might return HTML
+   - Verify session token presence and validity
+
+#### React Component Warnings
+
+1. Styled-Components Props Warnings:
+   - If you see warnings about invalid DOM props, use transient props:
+     ```typescript
+     // Instead of
+     const StyledButton = styled.button`
+       color: ${props => props.customColor};
+     `;
+
+     // Use
+     const StyledButton = styled.button`
+       color: ${props => props.$customColor};
+     `;
+     ```
+   - Update component usage:
+     ```typescript
+     // Instead of
+     <StyledButton customColor="blue" />
+
+     // Use
+     <StyledButton $customColor="blue" />
+     ```
+
+2. File Upload Component Checks:
+   - Verify form encType:
+     ```typescript
+     <form encType="multipart/form-data">
+     ```
+   - Check fetch/axios configuration:
+     ```typescript
+     const formData = new FormData();
+     formData.append('file', file);
+     
+     await fetch('/api/upload', {
+       method: 'POST',
+       body: formData,
+       // Don't set Content-Type header, let browser set it
+     });
+     ```
+
+3. Common React Props Issues:
+   - Ensure boolean props are properly passed:
+     ```typescript
+     // Incorrect
+     <Component isDisabled="true" />
+     
+     // Correct
+     <Component isDisabled={true} />
+     ```
+   - Check for undefined props being passed to DOM elements
+   - Verify event handler prop types
 
 ### Authentication Setup
 

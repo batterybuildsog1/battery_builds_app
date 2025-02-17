@@ -1,20 +1,17 @@
-// test-connection.js
-import { Pool } from 'pg';
-import dotenv from 'dotenv';
-
-dotenv.config();
+require('dotenv').config();
+const { Pool } = require('pg');
 
 async function testConnection() {
   const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: {
-      rejectUnauthorized: false,
-    },
+      rejectUnauthorized: false // Required for Supabase SSL
+    }
   });
 
   try {
-    const result = await pool.query('SELECT NOW()');
-    console.log('✅ Connection successful! Current time:', result.rows[0].now);
+    const res = await pool.query('SELECT NOW()');
+    console.log('✅ Connection successful! Current time:', res.rows[0].now);
   } catch (err) {
     console.error('❌ Connection failed:', err);
   } finally {
@@ -23,4 +20,3 @@ async function testConnection() {
 }
 
 testConnection();
-

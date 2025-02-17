@@ -67,6 +67,21 @@ While we're moving towards Tailwind CSS, existing styled-components should:
 - Not be expanded with new styles
 - Be gradually migrated to Tailwind CSS
 
+#### Important Styled-Components Guidelines
+- Always use transient props (prefixed with $) for custom styling properties to prevent them from being passed to DOM elements
+  ```jsx
+  // Correct
+  const Button = styled.button`
+    color: ${props => props.$isActive ? 'blue' : 'black'};
+  `;
+  
+  // Incorrect - will cause React DOM prop warnings
+  const Button = styled.button`
+    color: ${props => props.isActive ? 'blue' : 'black'};
+  `;
+  ```
+- This prevents React warnings about invalid DOM props and improves component clarity
+
 ## Best Practices
 
 1. Style Organization
@@ -109,6 +124,58 @@ Resolution Steps:
 - Check PostCSS configuration
 - Verify Tailwind configuration
 
+## File and Import Casing Checks
+
+Maintaining consistent casing between CSS module filenames and their import statements is crucial, especially when deploying to case-sensitive file systems (like Linux servers).
+
+### Common Casing Issues
+
+1. File Naming Consistency
+- Always use PascalCase for component files and their corresponding CSS modules
+  - Correct: `MessageComposer.module.css`
+  - Incorrect: `messageComposer.module.css` or `message-composer.module.css`
+- Ensure import statements exactly match the file name:
+  ```jsx
+  // Correct
+  import styles from './MessageComposer.module.css';
+  
+  // Incorrect - will fail on case-sensitive systems
+  import styles from './messageComposer.module.css';
+  ```
+
+### Prevention and Detection
+
+1. Manual Checks
+- Regularly audit your codebase for casing mismatches
+- Review file names in your IDE's file explorer
+- Cross-reference import statements with actual file names
+
+2. Automated Checks
+- Use ESLint with appropriate plugins to catch import/file mismatches
+- Implement a pre-commit hook using tools like husky:
+  ```json
+  {
+    "husky": {
+      "hooks": {
+        "pre-commit": "node scripts/check-file-casing.js"
+      }
+    }
+  }
+  ```
+- Consider using tools like `case-sensitive-paths-webpack-plugin` in your build configuration
+
+### Resolution Steps
+
+If you discover casing inconsistencies:
+1. List all CSS module files and their import statements
+2. Standardize on PascalCase for both files and imports
+3. Update version control:
+   ```bash
+   git mv oldname.module.css NewName.module.css
+   ```
+4. Update all import statements to match the new file name
+5. Test thoroughly on a case-sensitive system before deploying
+
 ## Migration Guidelines
 
 When converting existing components:
@@ -146,6 +213,37 @@ When converting existing components:
 - Review style consistency
 - Check for accessibility
 - Validate performance impact
+
+## API Integration Guidelines
+
+### File Upload and API Response Handling
+
+1. JSON Response Consistency
+- Ensure all API endpoints consistently return JSON responses
+- Handle potential HTML error pages from authentication/session validation failures
+- Set appropriate Content-Type headers in API responses
+
+2. File Upload Implementation
+- Verify API endpoint responses maintain JSON format even in error scenarios
+- Include proper error handling for authentication failures:
+  ```javascript
+  try {
+    const response = await fetch('/api/upload', {
+      // ... upload configuration
+    });
+    
+    // Check if response is JSON
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      throw new Error('Non-JSON response received');
+    }
+    
+    const data = await response.json();
+  } catch (error) {
+    // Handle non-JSON responses or other errors
+  }
+  ```
+- Implement proper session validation checks in API routes
 
 ## Conclusion
 

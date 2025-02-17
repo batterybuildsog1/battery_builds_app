@@ -3,6 +3,7 @@ import { supabase } from "../../../../supabaseClient";
 import { runManualJChain } from "@/lib/manualJChain";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../../../../pages/api/auth/[...nextauth]";
+import { loggingService } from "@/lib/services/LoggingService";
 
 /**
  * Initializes a Manual J calculation process using Gemini AI models:
@@ -27,7 +28,25 @@ import { authOptions } from "../../../../pages/api/auth/[...nextauth]";
  */
 export async function POST(req: NextRequest) {
   try {
-    const formData = await req.formData();
+    let formData;
+    try {
+      formData = await req.formData();
+    } catch (formError: any) {
+      console.error("FormData parsing failed:", {
+        error: formError.message,
+        timestamp: new Date().toISOString()
+      });
+      return NextResponse.json({
+        error: "Invalid form data submitted",
+        code: "INVALID_FORM_DATA",
+        details: formError.message
+      }, {
+        status: 400,
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+    }
     const location = formData.get("location")?.toString().trim() || "";
     const pdfFile = formData.get("pdf") as File | null;
 
@@ -40,7 +59,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ 
         error: "No PDF file uploaded.",
         code: "MISSING_PDF"
-      }, { status: 400 });
+      }, { 
+        status: 400,
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
     }
     if (!location) {
       console.error("Input validation failed: Missing location", {
@@ -50,7 +74,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ 
         error: "Location is required.",
         code: "MISSING_LOCATION"
-      }, { status: 400 });
+      }, { 
+        status: 400,
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
     }
     if (!pdfFile.type.includes('pdf')) {
       console.error("Input validation failed: Invalid file type", {
@@ -63,7 +92,12 @@ export async function POST(req: NextRequest) {
         error: "Uploaded file must be a PDF.",
         code: "INVALID_FILE_TYPE",
         provided: pdfFile.type
-      }, { status: 400 });
+      }, { 
+        status: 400,
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
     }
     
     // Validate file size (max 10MB)
@@ -81,7 +115,12 @@ export async function POST(req: NextRequest) {
         code: "FILE_TOO_LARGE",
         size: pdfFile.size,
         maxSize: MAX_FILE_SIZE
-      }, { status: 400 });
+      }, { 
+        status: 400,
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
     }
     
     // Convert PDF file to buffer for processing
@@ -89,17 +128,42 @@ export async function POST(req: NextRequest) {
     const buffer = Buffer.from(arrayBuffer);
 
     // Get and validate current session
-    const session = await getServerSession(authOptions);
-    
-    if (!session) {
-      console.error("Session validation failed", {
-        hasSession: false,
+    let session;
+    try {
+      session = await getServerSession(authOptions);
+      
+      if (!session || !session.user) {
+        console.error("Session validation failed", {
+          hasSession: !!session,
+          hasUser: !!session?.user,
+          timestamp: new Date().toISOString()
+        });
+        return NextResponse.json({ 
+          error: "Authentication required",
+          code: "AUTH_REQUIRED",
+          details: "Valid session and user required"
+        }, { 
+          status: 401,
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+      }
+    } catch (sessionError: any) {
+      console.error("Session retrieval failed", {
+        error: sessionError.message,
         timestamp: new Date().toISOString()
       });
       return NextResponse.json({ 
-        error: "Authentication required",
-        code: "AUTH_REQUIRED"
-      }, { status: 401 });
+        error: "Authentication error",
+        code: "AUTH_ERROR",
+        details: sessionError.message
+      }, { 
+        status: 401,
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
     }
 
     // Get user from validated session
@@ -113,11 +177,25 @@ export async function POST(req: NextRequest) {
       pdfSize: buffer.length,
       timestamp: new Date().toISOString()
     });
+
+    const startTime = Date.now();
     const results = await runManualJChain(buffer, location);
+    const processingTime = Date.now() - startTime;
+
+    // Log successful LLM interaction
+    loggingService.logLLMInteraction(
+      'MANUAL_J_CALCULATION',
+      JSON.stringify({ location, pdfSize: buffer.length }),
+      JSON.stringify(results),
+      processingTime,
+      'SUCCESS'
+    );
+
     console.log("Manual J calculation completed successfully", {
       location,
       hasStaticData: !!results.staticData,
       hasResults: !!results.manualJResults,
+      processingTime,
       timestamp: new Date().toISOString()
     });
     
@@ -182,6 +260,10 @@ export async function POST(req: NextRequest) {
       projectId: projectData[0].id,
       versionNumber: 1,
       ...results 
+    }, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
     });
   } catch (error: any) {
     console.error("Error in init API:", error);
@@ -193,6 +275,18 @@ export async function POST(req: NextRequest) {
                      error.code === '23505' ? 'DUPLICATE_VERSION' :
                      error.code === 'UNAUTHORIZED' ? 'AUTH_ERROR' :
                      error.code || 'UNKNOWN_ERROR';
+
+    // Log failed LLM interaction if it's an LLM-related error
+    if (error.code !== '23503' && error.code !== '23505') {
+      loggingService.logLLMInteraction(
+        'MANUAL_J_CALCULATION',
+        JSON.stringify({ location: formData?.get("location")?.toString() || 'unknown' }),
+        JSON.stringify({ error: errorMessage }),
+        0, // Processing time unknown for errors
+        'ERROR',
+        errorMessage
+      );
+    }
 
     // Log additional authentication context if available
     if (error.code === 'UNAUTHORIZED' || error.code === 'AUTH_ERROR') {

@@ -21,22 +21,22 @@ const Label = styled.label`
   margin-bottom: 0.25rem;
 `;
 
-const StyledInput = styled.input<{ hasError?: boolean; isFocused?: boolean }>`
+const StyledInput = styled.input<{ $hasError?: boolean; $isFocused?: boolean }>`
   padding: 0.5rem 0.75rem;
   border-radius: 0.375rem;
-  border: 1px solid ${props => props.hasError ? '#EF4444' : '#D1D5DB'};
+  border: 1px solid ${props => props.$hasError ? '#EF4444' : '#D1D5DB'};
   font-size: 0.875rem;
   line-height: 1.25rem;
   width: 100%;
   transition: all 0.15s ease-in-out;
 
   &:hover {
-    border-color: ${props => props.hasError ? '#EF4444' : '#9CA3AF'};
+    border-color: ${props => props.$hasError ? '#EF4444' : '#9CA3AF'};
   }
 
-  ${props => props.isFocused && css`
-    border-color: ${props.hasError ? '#EF4444' : '#2563EB'};
-    box-shadow: 0 0 0 3px ${props.hasError ? 'rgba(239, 68, 68, 0.1)' : 'rgba(37, 99, 235, 0.1)'};
+  ${props => props.$isFocused && css`
+    border-color: ${props.$hasError ? '#EF4444' : '#2563EB'};
+    box-shadow: 0 0 0 3px ${props.$hasError ? 'rgba(239, 68, 68, 0.1)' : 'rgba(37, 99, 235, 0.1)'};
   `}
 
   &:disabled {
@@ -80,8 +80,8 @@ const Input = forwardRef<HTMLInputElement, InputProps>(({
       {label && <Label htmlFor={props.id}>{label}</Label>}
       <StyledInput
         ref={ref}
-        hasError={!!error}
-        isFocused={isFocused}
+        $hasError={!!error}
+        $isFocused={isFocused}
         onFocus={handleFocus}
         onBlur={handleBlur}
         aria-invalid={!!error}
