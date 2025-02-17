@@ -1,0 +1,44 @@
+.messageComposer {
+  @apply w-full relative;
+}
+
+.inputContainer {
+  @apply flex items-end relative w-full;
+}
+
+.textarea {
+  @apply w-full min-h-[40px] max-h-[200px] p-3 pr-12
+    border border-gray-300 rounded-lg
+    resize-none overflow-y-auto
+    focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
+    disabled:bg-gray-100 disabled:cursor-not-allowed
+    text-gray-900 placeholder-gray-500;
+}
+
+.sendButton {
+  @apply absolute right-2 bottom-2
+    p-2 rounded-full
+    text-white bg-blue-500
+    hover:bg-blue-600 focus:bg-blue-600
+    disabled:bg-gray-300 disabled:cursor-not-allowed
+    transition-colors duration-200
+    focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2;
+}
+
+.sendIcon {
+  @apply w-5 h-5 text-white;
+}
+
+.suggestions {
+  @apply absolute w-full mt-1 py-2
+    bg-white border border-gray-200
+    rounded-lg shadow-lg
+    z-10 max-h-[200px] overflow-y-auto;
+}
+
+.suggestionItem {
+  @apply w-full px-4 py-2 text-left
+    hover:bg-gray-100
+    focus:bg-gray-100 focus:outline-none
+    text-gray-700
+    transition-colors duration-150;

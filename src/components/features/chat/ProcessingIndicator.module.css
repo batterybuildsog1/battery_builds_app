@@ -1,0 +1,11 @@
+.processingWrapper {
+  @apply flex items-center gap-2 opacity-0 pointer-events-none transition-opacity duration-200 ease-in-out;
+}
+
+.processingWrapper[data-processing='true'] {
+  @apply opacity-100 pointer-events-auto;
+}
+
+.processingText {
+  @apply text-sm text-gray-600;
+}

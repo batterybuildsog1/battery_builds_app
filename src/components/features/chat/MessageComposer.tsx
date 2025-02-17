@@ -1,6 +1,21 @@
 import React, { useState, KeyboardEvent, useRef, useEffect } from 'react';
 import styles from './MessageComposer.module.css';
 
+/**
+ * MessageComposer Component
+ * 
+ * Styling Implementation:
+ * - Uses CSS Modules with Tailwind CSS utility classes
+ * - Styles are defined in MessageComposer.module.css
+ * - Component uses the following styled elements:
+ *   - messageComposer: Main container
+ *   - inputContainer: Wrapper for textarea and send button
+ *   - textarea: Main input field with auto-resize
+ *   - sendButton: Submit button with icon
+ *   - suggestions: Dropdown container for suggestions
+ *   - suggestionItem: Individual suggestion buttons
+ */
+
 interface MessageComposerProps {
   onSubmit: (message: string) => void;
   placeholder?: string;

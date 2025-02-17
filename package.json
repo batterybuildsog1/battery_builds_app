@@ -6,7 +6,10 @@
   "scripts": {
     "dev": "next dev",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "aider": "./configure-aider.sh"
+    "aider": "./configure-aider.sh",
+    "lint": "next lint && stylelint '**/*.{css,scss}'",
+    "lint:fix": "next lint --fix && stylelint '**/*.{css,scss}' --fix",
+    "lint:style": "stylelint '**/*.{css,scss}'"
   },
   "keywords": [],
   "author": "",
@@ -58,6 +61,20 @@
     "postcss": "^8.5.2",
     "prisma": "^6.3.1",
     "tailwindcss": "^3.4.17",
-    "typescript": "^5"
+    "typescript": "^5",
+    "stylelint": "^15.11.0",
+    "stylelint-config-standard": "^34.0.0",
+    "stylelint-config-prettier": "^9.0.5",
+    "stylelint-config-tailwindcss": "^0.0.7",
+    "lint-staged": "^15.2.0",
+    "husky": "^8.0.3"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx}": [
+      "eslint --fix"
+    ],
+    "*.{css,scss}": [
+      "stylelint --fix"
+    ]
   }
 }
