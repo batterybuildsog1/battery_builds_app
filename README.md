@@ -92,9 +92,71 @@ To learn more about Next.js, take a look at the following resources:
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
+## Development and Deployment
+
+### Local Development Setup
+
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+2. Start the development server:
+   ```bash
+   npm run dev
+   ```
+   This will start the server at http://localhost:3000
+
+### Production Build Testing
+
+To test your production build locally:
+1. Create a production build:
+   ```bash
+   npm run build
+   ```
+
+2. Start the production server:
+   ```bash
+   npm run start
+   ```
+   This will start the production server at http://localhost:3000
+
+### Git Repository Setup
+
+1. Check your current Git remote configuration:
+   ```bash
+   git remote -v
+   ```
+
+2. If no remote is configured, add your repository:
+   ```bash
+   git remote add origin <repository-url>
+   ```
+
+3. Push your code to the repository:
+   ```bash
+   git push -u origin main
+   ```
+
 ## Deploy on Vercel
 
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+
+### Deployment Methods
+
+1. **Via Vercel Dashboard:**
+   - Connect your GitHub repository in the Vercel dashboard
+   - Vercel will automatically build and deploy your site
+   - Subsequent pushes to your main branch will trigger automatic deployments
+
+2. **Via Vercel CLI:**
+   ```bash
+   # Install Vercel CLI globally
+   npm i -g vercel
+
+   # Deploy to production
+   vercel --prod
+   ```
 
 ### Deployment Configuration
 
