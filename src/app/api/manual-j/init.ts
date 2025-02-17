@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "../../../../supabaseClient";
 import { runManualJChain } from "@/lib/manualJChain";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "../../../../pages/api/auth/[...nextauth]";
 
 /**
  * Initializes a Manual J calculation process using Gemini AI models:
@@ -86,16 +88,22 @@ export async function POST(req: NextRequest) {
     const arrayBuffer = await pdfFile.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    // Get current authenticated user
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    // Get and validate current session
+    const session = await getServerSession(authOptions);
     
-    if (authError || !user) {
+    if (!session) {
+      console.error("Session validation failed", {
+        hasSession: false,
+        timestamp: new Date().toISOString()
+      });
       return NextResponse.json({ 
         error: "Authentication required",
-        code: "AUTH_REQUIRED",
-        details: authError?.message || "No authenticated user found"
+        code: "AUTH_REQUIRED"
       }, { status: 401 });
     }
+
+    // Get user from validated session
+    const user = session.user;
 
     // Process PDF through Gemini AI pipeline:
     // 1. Extract static data using gemini-2.0-vision
@@ -116,7 +124,7 @@ export async function POST(req: NextRequest) {
     // Start a Supabase transaction for atomic project and version creation
     const { data: projectData, error: projectError } = await supabase.from("projects").insert([
       {
-        user_id: user.id,
+        user_id: session.user.id!,
         name: `Manual J Calculation - ${location}`,
         location,
         static_data: results.staticData,
@@ -192,7 +200,10 @@ export async function POST(req: NextRequest) {
         errorType: 'AuthError',
         timestamp: new Date().toISOString(),
         details: error.details || null,
-        authState: error.session ? 'Session exists' : 'No session'
+        sessionState: error.session ? {
+          expired: error.session.expires_at < Date.now() / 1000,
+          expiresAt: new Date(error.session.expires_at * 1000).toISOString()
+        } : 'No session'
       });
     }
     

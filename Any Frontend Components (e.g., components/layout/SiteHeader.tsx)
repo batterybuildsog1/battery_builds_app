@@ -1,0 +1,95 @@
+import { useSession, signIn, signOut } from 'next-auth/react'
+import { useState } from 'react'
+import {
+  Avatar,
+  Button,
+  Box,
+  Menu,
+  MenuItem,
+  AppBar,
+  Toolbar,
+  Typography,
+  IconButton,
+} from '@mui/material'
+import MenuIcon from '@mui/icons-material/Menu'
+
+export default function SiteHeader() {
+  const { data: session, status } = useSession()
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
+  const open = Boolean(anchorEl)
+
+  const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget)
+  }
+
+  const handleClose = () => {
+    setAnchorEl(null)
+  }
+
+  const handleSignOut = async () => {
+    await signOut()
+    handleClose()
+  }
+
+  return (
+    <AppBar position="static">
+      <Toolbar>
+        <IconButton
+          size="large"
+          edge="start"
+          color="inherit"
+          aria-label="menu"
+          sx={{ mr: 2 }}
+        >
+          <MenuIcon />
+        </IconButton>
+        
+        <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+          Battery Builds
+        </Typography>
+
+        {status === 'loading' ? (
+          <Box sx={{ p: 1 }}>Loading...</Box>
+        ) : session ? (
+          <Box>
+            <IconButton
+              onClick={handleMenu}
+              size="small"
+              aria-controls={open ? 'account-menu' : undefined}
+              aria-haspopup="true"
+              aria-expanded={open ? 'true' : undefined}
+            >
+              <Avatar
+                alt={session.user?.name || 'User'}
+                src={session.user?.image || undefined}
+                sx={{ width: 32, height: 32 }}
+              />
+            </IconButton>
+            <Menu
+              id="account-menu"
+              anchorEl={anchorEl}
+              open={open}
+              onClose={handleClose}
+              transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+              anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+            >
+              <MenuItem disabled>
+                {session.user?.email}
+              </MenuItem>
+              <MenuItem onClick={handleSignOut}>
+                Sign out
+              </MenuItem>
+            </Menu>
+          </Box>
+        ) : (
+          <Button
+            color="inherit"
+            onClick={() => signIn()}
+          >
+            Sign In
+          </Button>
+        )}
+      </Toolbar>
+    </AppBar>
+  )
+}

@@ -7,11 +7,9 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 This project requires several environment variables to be set up in a `.env` file at the root of the project. The following variables are required:
 
 ```env
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 DATABASE_URL=your_database_url
-NEXTAUTH_URL=your_nextauth_url
-NEXTAUTH_SECRET=your_nextauth_secret
+NEXTAUTH_URL=http://localhost:3000 # In development
+NEXTAUTH_SECRET=your_nextauth_secret # Generate with: openssl rand -base64 32
 GOOGLE_CLIENT_ID=your_google_client_id
 GOOGLE_CLIENT_SECRET=your_google_client_secret
 GEMINI_API_KEY=your_gemini_api_key
@@ -19,13 +17,51 @@ GEMINI_API_KEY=your_gemini_api_key
 
 Contact the project administrator for the actual values of these environment variables.
 
-### Supabase Setup
+### Dependency Management and Troubleshooting
 
-1. Ensure you have access to the Supabase project
-2. Configure authentication providers in the Supabase dashboard:
-   - Enable Google OAuth
-   - Set up the callback URLs for your development and production environments
-3. Update your `.env` file with the provided Supabase credentials
+When installing dependencies, you might encounter a peer dependency conflict (ERESOLVE) related to React versions. This typically occurs because some UI libraries (like @headlessui/react) require React version 16, 17, or 18, while the project might default to React 19.
+
+To resolve this:
+
+1. Recommended Solution:
+   - Ensure your package.json specifies React 18:
+   ```json
+   {
+     "dependencies": {
+       "react": "^18.2.0",
+       "react-dom": "^18.2.0"
+     }
+   }
+   ```
+   - Clean your installation:
+     ```bash
+     rm -rf node_modules
+     rm package-lock.json
+     npm install
+     ```
+
+2. Alternative Workaround (not recommended for production):
+   ```bash
+   npm install --force
+   # or
+   npm install --legacy-peer-deps
+   ```
+
+Note: Using --force or --legacy-peer-deps is not recommended for production as it may lead to unexpected behavior. Always prefer matching compatible versions.
+
+### Authentication Setup
+
+1. Set up a Google Cloud Project and configure OAuth 2.0:
+   - Go to the Google Cloud Console
+   - Create a new project or select an existing one
+   - Enable the Google OAuth2 API
+   - Configure the OAuth consent screen
+   - Create OAuth 2.0 credentials (client ID and client secret)
+   - Add authorized redirect URIs:
+     - Development: http://localhost:3000/api/auth/callback/google
+     - Production: https://your-domain.com/api/auth/callback/google
+
+2. Update your `.env` file with the Google OAuth credentials
 
 ### Running the Development Server
 
@@ -62,9 +98,16 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 
 ### Deployment Configuration
 
-1. When deploying to Vercel, ensure all environment variables are properly configured in your Vercel project settings
-2. Set up the production URLs in your Supabase dashboard for authentication
-3. Update the NEXTAUTH_URL to match your production domain
+When deploying to Vercel:
+1. Configure the following environment variables in your Vercel project settings:
+   - NEXTAUTH_URL (set to your production URL, e.g., https://your-domain.com)
+   - NEXTAUTH_SECRET (use the same secret as development)
+   - GOOGLE_CLIENT_ID
+   - GOOGLE_CLIENT_SECRET
+   - DATABASE_URL
+   - GEMINI_API_KEY
+2. Add your production domain to the authorized redirect URIs in Google Cloud Console
+3. Ensure your production domain is properly set in NEXTAUTH_URL
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 

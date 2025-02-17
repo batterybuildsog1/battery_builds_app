@@ -1,6 +1,7 @@
 // pages/_app.tsx
 import React from 'react';
 import type { AppProps } from 'next/app'
+import { SessionProvider } from 'next-auth/react'
 import '../globals.css'   // Tailwind base
 import '../theme.css'     // Optional theme classes
 
@@ -11,14 +12,19 @@ import '../theme.css'     // Optional theme classes
 import { SiteHeader } from '../components/layout/SiteHeader'
 import { SiteFooter } from '../components/layout/SiteFooter'
 
-export default function App({ Component, pageProps }: AppProps) {
+export default function App({ 
+  Component, 
+  pageProps: { session, ...pageProps }
+}: AppProps) {
   return (
-    <div className="flex min-h-screen flex-col bg-offWhite">
-      <SiteHeader />
-      <main className="flex-1">
-        <Component {...pageProps} />
-      </main>
-      <SiteFooter />
-    </div>
+    <SessionProvider session={session}>
+      <div className="flex min-h-screen flex-col bg-offWhite">
+        <SiteHeader />
+        <main className="flex-1">
+          <Component {...pageProps} />
+        </main>
+        <SiteFooter />
+      </div>
+    </SessionProvider>
   )
 }

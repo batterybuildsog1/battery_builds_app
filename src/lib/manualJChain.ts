@@ -1,4 +1,5 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import * as pdf from 'pdf-parse';
 
 if (!process.env.GEMINI_API_KEY) {
   throw new Error("Missing GEMINI_API_KEY environment variable");
@@ -29,21 +30,50 @@ const visionModel = genAI.getGenerativeModel({
  * @returns Structured text containing extracted building characteristics
  * @throws {Error} When PDF processing or data extraction fails
  */
+/**
+ * Helper function to get the total number of pages in a PDF
+ * @param pdfBase64 - Base64 encoded PDF document
+ * @returns Total number of pages in the PDF
+ */
+async function getPDFPageCount(pdfBase64: string): Promise<number> {
+  try {
+    const pdfBuffer = Buffer.from(pdfBase64, 'base64');
+    const data = await pdf(pdfBuffer);
+    return data.numpages;
+  } catch (error: any) {
+    console.error("Error getting PDF page count:", error);
+    throw new Error(`Failed to get PDF page count: ${error.message}`);
+  }
+}
+
+/**
+ * Extracts static building data from a PDF using the gemini-pro-vision model
+ * Processes the PDF page by page as required by Gemini Vision API
+ * @param pdfBase64 - Base64 encoded PDF document
+ * @returns Structured text containing extracted building characteristics
+ * @throws {Error} When PDF processing or data extraction fails
+ */
 async function extractStaticData(pdfBase64: string): Promise<string> {
   try {
+    const totalPages = await getPDFPageCount(pdfBase64);
     const prompt = `Analyze this building plans PDF and extract key building characteristics 
       in a structured format. Include details about square footage, number of rooms, 
       window specifications, insulation values, and construction materials.`;
     
-    const result = await visionModel.generateContent([
-      prompt,
-      {
+    // Create array of page parts for vision model
+    const pageParts = [];
+    for (let i = 0; i < totalPages; i++) {
+      pageParts.push({
         inlineData: {
           mimeType: "application/pdf",
-          data: pdfBase64
+          data: pdfBase64,
+          pageRange: { start: i + 1, end: i + 1 }
         }
-      }
-    ]);
+      });
+    }
+
+    // Call vision model with prompt and all page parts
+    const result = await visionModel.generateContent([prompt, ...pageParts]);
     const response = await result.response;
     return response.text();
   } catch (error: any) {
