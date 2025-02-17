@@ -19,7 +19,24 @@ Contact the project administrator for the actual values of these environment var
 
 ### Dependency Management and Troubleshooting
 
-When installing dependencies, you might encounter a peer dependency conflict (ERESOLVE) related to React versions. This typically occurs because some UI libraries (like @headlessui/react) require React version 16, 17, or 18, while the project might default to React 19.
+#### Common Dependency Issues
+
+1. **Stylelint and Prettier Conflicts**
+   - If you encounter conflicts between stylelint (v15.11.0) and stylelint-config-prettier:
+     ```bash
+     # Update stylelint-config-prettier to a compatible version
+     npm install --save-dev stylelint-config-prettier@^10.0.0
+     ```
+
+2. **Missing Material UI Dependencies**
+   - If you see "Module not found: Can't resolve '@mui/icons-material'" or similar errors:
+     ```bash
+     # Install required Material UI packages
+     npm install @mui/material @mui/icons-material @emotion/react @emotion/styled
+     ```
+
+3. **React Version Conflicts**
+   When installing dependencies, you might encounter a peer dependency conflict (ERESOLVE) related to React versions. This typically occurs because some UI libraries (like @headlessui/react) require React version 16, 17, or 18, while the project might default to React 19.
 
 To resolve this:
 
@@ -48,6 +65,29 @@ To resolve this:
    ```
 
 Note: Using --force or --legacy-peer-deps is not recommended for production as it may lead to unexpected behavior. Always prefer matching compatible versions.
+
+#### Development Server Commands
+
+1. **Correct Command to Start Development Server**
+   ```bash
+   npm run dev  # Correct command
+   ```
+   Note: Do not use 'npm run deve' as this is incorrect and will fail.
+
+2. **Clearing Cache for Persistent Issues**
+   If you encounter persistent issues after dependency changes:
+   ```bash
+   # Remove all caches and dependencies
+   rm -rf .next
+   rm -rf node_modules
+   rm package-lock.json
+   
+   # Clean install
+   npm install
+   
+   # Start development server
+   npm run dev
+   ```
 
 ### General Dependency and Module Resolution Issues
 
