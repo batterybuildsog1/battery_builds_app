@@ -2,6 +2,9 @@
 const config = {
   plugins: {
     tailwindcss: {},
+    autoprefixer: {},
+    'postcss-nested': {},
+    'postcss-import': {}
   },
 };
 
