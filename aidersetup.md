@@ -14,8 +14,12 @@ Automated git integration with safety controls
 
 Architectural Configuration
 Model Specification
+Note: Ensure your .env.local file contains the correct model identifiers:
+- GEMINI_REASONING_MODEL: For the architect model (e.g., "gemini-2.0-flash-thinking-exp")
+- GEMINI_VISION_MODEL: If using vision capabilities
+
 bash
-aider --architect gemini-2.0-flash-thinking-exp \
+aider --architect $GEMINI_REASONING_MODEL \
       --editor-model claude-3.5-sonnet-20241022 \
       --api-key google=your_gemini_key \
       --api-key anthropic=your_claude_key \
@@ -31,7 +35,8 @@ Implementation Details
 Model Configuration File (~/.aider/model_config.yml)
 text
 models:
-  gemini-2.0-flash-thinking-exp:
+  # Use the model identifier from GEMINI_REASONING_MODEL in .env.local
+  ${GEMINI_REASONING_MODEL}:
     max_output_tokens: 12000
     reasoning_effort: 3
     top_k: 40
@@ -65,8 +70,9 @@ python
 from aider.coders import ArchitectCoder
 from aider.models import GeminiModel, ClaudeModel
 
+# Load model identifier from environment variable
 gemini = GeminiModel(
-    model="gemini-2.0-flash-thinking-exp",
+    model=process.env.GEMINI_REASONING_MODEL,  # From .env.local
     api_key="your_key",
     max_output_tokens=12000
 )

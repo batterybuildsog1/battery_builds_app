@@ -1,27 +1,29 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import * as pdf from 'pdf-parse';
 
-if (!process.env.GEMINI_API_KEY) {
-  throw new Error("Missing GEMINI_API_KEY environment variable");
+if (!process.env.GEMINI_API_KEY || !process.env.GEMINI_REASONING_MODEL || !process.env.GEMINI_VISION_MODEL) {
+  throw new Error("Missing required GEMINI environment variables");
 }
 
-// Initialize Gemini clients for different processing needs
+// Initialize Gemini client for API access
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-// Initialize reasoning model with flash-thinking for enhanced analytical capabilities
+// Initialize reasoning model from GEMINI_REASONING_MODEL env var for enhanced analytical capabilities
 const reasoningModel = genAI.getGenerativeModel({ 
-  model: "gemini-2.0-pro-exp-02-05",
+  model: process.env.GEMINI_REASONING_MODEL,
   generationConfig: {
-    temperature: 0.7,
-    topK: 40,
-    topP: 0.95,
-    maxOutputTokens: 1024,
+    temperature: 0.4,
+    maxOutputTokens: 8192
   }
 });
 
-// Initialize vision model for PDF processing and data extraction
+// Initialize vision model from GEMINI_VISION_MODEL env var for PDF processing and data extraction
 const visionModel = genAI.getGenerativeModel({ 
-  model: "gemini-2.0-flash-thinking-exp-01-21"
+  model: process.env.GEMINI_VISION_MODEL,
+  generationConfig: {
+    temperature: 0.4,
+    maxOutputTokens: 8192
+  }
 });
 
 /**
@@ -83,7 +85,7 @@ async function extractStaticData(pdfBase64: string): Promise<string> {
 }
 
 /**
- * Generates Manual J calculation assumptions using gemini-2.0-flash-thinking-exp
+ * Generates Manual J calculation assumptions using the configured reasoning model
  * @param location - Geographic location for climate data
  * @param staticData - Extracted building characteristics
  * @returns JSON formatted assumptions for Manual J calculations
@@ -112,7 +114,7 @@ async function generateDynamicAssumptions(location: string, staticData: string):
 }
 
 /**
- * Performs Manual J load calculations using gemini-2.0-flash-thinking-exp
+ * Performs Manual J load calculations using the configured reasoning model
  * @param staticData - Building characteristics data
  * @param assumptions - Generated assumptions for calculations
  * @returns Structured calculation results including load breakdowns
@@ -145,7 +147,7 @@ async function calculateManualJResults(staticData: string, assumptions: string):
 }
 
 /**
- * Generates visualization data using gemini-2.0-flash-thinking-exp
+ * Generates visualization data using the configured reasoning model
  * @param results - Manual J calculation results
  * @returns Object containing chart specifications and CSV data
  * @throws {Error} When visualization data generation fails
@@ -184,9 +186,9 @@ async function generateVisualizationData(results: string): Promise<{ chartData: 
  * 3. Manual J calculations using gemini-2.0-flash-thinking-exp for complex computations
  * 4. Visualization data generation using gemini-2.0-flash-thinking-exp for data formatting
  * 
- * Each step utilizes specialized models:
- * - PDF Analysis: gemini-2.0-flash-thinking-exp-01-21 for visual document understanding
- * - Calculations & Logic: gemini-2.0-pro-exp-02-05 for analytical processing
+ * Each step utilizes specialized models configured via environment variables in .env.local:
+ * - PDF Analysis: Uses GEMINI_VISION_MODEL for visual document understanding
+ * - Calculations & Logic: Uses GEMINI_REASONING_MODEL for analytical processing
  * 
  * @param pdfBuffer - Buffer containing the building plans PDF (converted to base64 for API compatibility)
  * @param location - Geographic location for climate considerations

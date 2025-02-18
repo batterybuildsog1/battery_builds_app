@@ -6,13 +6,23 @@ if (!process.env.GEMINI_API_KEY) {
   throw new Error("Missing GEMINI_API_KEY environment variable");
 }
 
+if (!process.env.GEMINI_REASONING_MODEL) {
+  throw new Error("Missing GEMINI_REASONING_MODEL environment variable");
+}
+
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 /**
- * Initialize Gemini model with flash-thinking capabilities
- * Using gemini-2.0-flash-thinking-exp for enhanced reasoning and analysis
- * This specific model is optimized for complex computational tasks and logical reasoning
+ * Initialize Gemini model with advanced reasoning capabilities
+ * Using the model specified in process.env.GEMINI_REASONING_MODEL for enhanced analysis
+ * Configure the appropriate model in .env.local for complex computational tasks and logical reasoning
  */
-const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-thinking-exp" });
+const model = genAI.getGenerativeModel({ 
+  model: process.env.GEMINI_REASONING_MODEL,
+  generationConfig: {
+    temperature: 0.4,
+    maxOutputTokens: 8192
+  }
+});
 
 
 export async function POST(req: NextRequest) {
@@ -74,13 +84,7 @@ export async function POST(req: NextRequest) {
     };
 
     const chat = model.startChat({
-      history: [contextMessage, ...messages],
-      generationConfig: {
-        temperature: 0.7,
-        topK: 40,
-        topP: 0.95,
-        maxOutputTokens: 1024,
-      },
+      history: [contextMessage, ...messages]
     });
 
     const result = await chat.sendMessage(messages[messages.length - 1].parts[0].text);

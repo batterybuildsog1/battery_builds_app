@@ -7,8 +7,8 @@ import { loggingService } from "@/lib/services/LoggingService";
 
 /**
  * Initializes a Manual J calculation process using Gemini AI models:
- * - Uses gemini-2.0-flash-thinking-exp for reasoning and calculations
- * - Uses gemini-2.0-vision for PDF data extraction and analysis
+ * - Uses process.env.GEMINI_REASONING_MODEL for reasoning and calculations
+ * - Uses process.env.GEMINI_VISION_MODEL for PDF data extraction and analysis
  * 
  * The process includes:
  * 1. Input validation and sanitization
@@ -170,8 +170,8 @@ export async function POST(req: NextRequest) {
     const user = session.user;
 
     // Process PDF through Gemini AI pipeline:
-    // 1. Extract static data using gemini-2.0-vision
-    // 2. Generate assumptions and calculations using gemini-2.0-flash-thinking-exp
+    // 1. Extract static data using gemini-2.0-pro-exp-02-05
+    // 2. Generate assumptions and calculations using gemini-2.0-flash-thinking-exp-01-21
     console.log("Starting Manual J calculation", {
       location,
       pdfSize: buffer.length,

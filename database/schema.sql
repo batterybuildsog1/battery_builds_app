@@ -37,9 +37,11 @@ CREATE TABLE projects (
     csv_data TEXT NOT NULL,
 
     -- AI Model Tracking
+    -- NOTE: These default values should remain in sync with environment variables
+    -- GEMINI_REASONING_MODEL and GEMINI_VISION_MODEL defined in .env.local
     model_versions JSONB NOT NULL DEFAULT json_build_object(
-        'vision_model', 'gemini-pro-vision',
-        'reasoning_model', 'gemini-2.0-flash-thinking-exp'
+        'vision_model', 'gemini-2.0-pro-exp-02-05',
+        'reasoning_model', 'gemini-2.0-flash-thinking-exp-01-21'
     ),
 
     -- Error Handling

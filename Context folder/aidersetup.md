@@ -15,8 +15,12 @@ Automated git integration with safety controls
 Architectural Configuration
 Model Specification
 bash
-aider --architect gemini-2.0-flash-thinking-exp \
-      --editor-model claude-3.5-sonnet-20241022 \
+# First, ensure your .env.local contains the required model names:
+# GEMINI_REASONING_MODEL=your-gemini-model-name
+# CLAUDE_MODEL=your-claude-model-name
+
+aider --architect $GEMINI_REASONING_MODEL \
+      --editor-model $CLAUDE_MODEL \
       --api-key google=your_gemini_key \
       --api-key anthropic=your_claude_key \
       --model-settings-file ~/.aider/model_config.yml
@@ -28,16 +32,25 @@ Temperature	0.3	0.2
 Reasoning Effort	High	Medium
 Auto-Context Refresh	Every 5 Changes	Manual
 Implementation Details
+Environment Configuration
+Before proceeding with the implementation, ensure you have created a `.env.local` file in your project root with the following variables:
+```env
+GEMINI_REASONING_MODEL=your-gemini-model-name
+CLAUDE_MODEL=your-claude-model-name
+```
+
 Model Configuration File (~/.aider/model_config.yml)
 text
 models:
-  gemini-2.0-flash-thinking-exp:
+  # Use the model name from GEMINI_REASONING_MODEL in .env.local
+  ${GEMINI_REASONING_MODEL}:
     max_output_tokens: 12000
     reasoning_effort: 3
     top_k: 40
     context_management: dynamic
     
-  claude-3.5-sonnet-20241022:
+  # Use the model name from CLAUDE_MODEL in .env.local
+  ${CLAUDE_MODEL}:
     max_output_tokens: 8000
     temperature: 0.2
     stop_sequences: ["\n\nHuman:", "\n\nAssistant:"]
@@ -65,14 +78,17 @@ python
 from aider.coders import ArchitectCoder
 from aider.models import GeminiModel, ClaudeModel
 
+# Import for environment variables
+import os
+
 gemini = GeminiModel(
-    model="gemini-2.0-flash-thinking-exp",
+    model=os.getenv('GEMINI_REASONING_MODEL'),  # Set in .env.local
     api_key="your_key",
     max_output_tokens=12000
 )
 
 claude = ClaudeModel(
-    model="claude-3.5-sonnet-20241022",
+    model=os.getenv('CLAUDE_MODEL'),  # Set in .env.local
     api_key="your_key",
     max_output_tokens=8000
 )
