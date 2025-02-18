@@ -1,10 +1,10 @@
-import { getVisionModel, getSafeVisionModel } from './gemini';
 import { buildFilePart } from './apiUtils';
+
+const GEMINI_API_KEY = process.env.GOOGLE_AI_API_KEY;
+const GEMINI_API_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-vision:generateContent';
 
 export async function processPDF(pdfBuffer: Buffer) {
   try {
-    // Try unsafe model first
-    const visionModel = getVisionModel();
     const filePart = buildFilePart(pdfBuffer, 'application/pdf');
 
     const systemInstruction = `
@@ -19,31 +19,33 @@ export async function processPDF(pdfBuffer: Buffer) {
       }
     `;
 
-    try {
-      const result = await visionModel.generateContent([
-        systemInstruction,
-        filePart
-      ]);
-      
-      const response = await result.response;
-      return {
-        success: true,
-        data: response.text()
-      };
-    } catch (unsafeModelError) {
-      // If unsafe model fails, try safe model as fallback
-      const safeModel = getSafeVisionModel();
-      const safeResult = await safeModel.generateContent([
-        systemInstruction,
-        filePart
-      ]);
-      
-      const safeResponse = await safeResult.response;
-      return {
-        success: true,
-        data: safeResponse.text()
-      };
+    const response = await fetch(GEMINI_API_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': GEMINI_API_KEY
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [
+              { text: systemInstruction },
+              filePart
+            ]
+          }
+        ]
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`API request failed with status ${response.status}`);
     }
+
+    const result = await response.json();
+    return {
+      success: true,
+      data: result.candidates[0].content.parts[0].text
+    };
   } catch (error) {
     return {
       success: false,

@@ -5,6 +5,27 @@ import {
   GenerativeModel,
 } from "@google/generative-ai";
 
+const MODEL_CONFIG = {
+  vision: {
+    model: 'gemini-pro-vision',
+    generationConfig: {
+      temperature: 0.4,
+      topP: 1,
+      topK: 32,
+      maxOutputTokens: 2048
+    }
+  },
+  reasoning: {
+    model: 'gemini-pro',
+    generationConfig: {
+      temperature: 0.9,
+      topP: 1,
+      topK: 32,
+      maxOutputTokens: 2048
+    }
+  }
+};
+
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
 export const SAFETY_SETTINGS = [
@@ -26,23 +47,20 @@ export const SAFETY_SETTINGS = [
   },
 ];
 
-export const getModel = (modelName: string): GenerativeModel => {
-  return genAI.getGenerativeModel({ model: modelName });
-};
-
-export const getSafeModel = (modelName: string): GenerativeModel => {
-  const model = getModel(modelName);
+export const getModel = (type: 'vision' | 'reasoning'): GenerativeModel => {
+  const config = MODEL_CONFIG[type];
+  const model = genAI.getGenerativeModel({ 
+    model: config.model,
+    generationConfig: config.generationConfig,
+  });
   model.setSafetySettings(SAFETY_SETTINGS);
   return model;
 };
 
-// Environment variables for model names:
-// GEMINI_REASONING_MODEL - Used for text-based reasoning tasks
-// GEMINI_VISION_MODEL - Used for vision-related tasks
 export const getReasoningModel = (): GenerativeModel => {
-  return getModel(process.env.GEMINI_REASONING_MODEL || "gemini-pro");
+  return getModel('reasoning');
 };
 
 export const getVisionModel = (): GenerativeModel => {
-  return getModel(process.env.GEMINI_VISION_MODEL || "gemini-pro-vision");
+  return getModel('vision');
 };

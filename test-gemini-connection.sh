@@ -33,20 +33,29 @@ BASE_URL="https://generativelanguage.googleapis.com/v1beta"
 list_models() {
     echo "Fetching available models..."
     curl -s -X GET \
-        -H "Authorization: Bearer ${GEMINI_API_KEY}" \
+        -H "x-goog-api-key: ${GEMINI_API_KEY}" \
         "${BASE_URL}/models" | jq '.'
 }
 
-# Function to test a specific model
+# Function to test a specific model with a custom prompt
 test_model() {
     local MODEL=$1
     local MODEL_TYPE=$2
+    local PROMPT=$3
     
     echo "Testing ${MODEL_TYPE} (${MODEL})..."
+    echo "Prompt: ${PROMPT}"
+    
     local RESPONSE=$(curl -s -X POST \
-        -H "Authorization: Bearer ${GEMINI_API_KEY}" \
+        -H "x-goog-api-key: ${GEMINI_API_KEY}" \
         -H "Content-Type: application/json" \
-        -d '{"contents":[{"parts":[{"text":"Test response"}]}]}' \
+        -d "{
+            \"contents\": [{
+                \"parts\":[{
+                    \"text\": \"${PROMPT}\"
+                }]
+            }]
+        }" \
         "${BASE_URL}/models/${MODEL}:generateContent")
     
     echo "${MODEL_TYPE} Response:"
@@ -61,10 +70,14 @@ echo "--------------------------------"
 list_models
 echo "--------------------------------"
 
-# Test reasoning model
-test_model "$GEMINI_REASONING_MODEL" "Reasoning Model"
+# Test flash thinking model with a complex reasoning task
+echo "Testing Flash Thinking Model with Complex Task..."
+test_model "$GEMINI_REASONING_MODEL" "Flash Thinking Model" "Design a step-by-step process for optimizing a battery manufacturing line. Consider efficiency, quality control, and safety measures."
 
-# Test vision model
-test_model "$GEMINI_VISION_MODEL" "Vision Model"
+# Test pro vision model with an analytical question
+echo "Testing Pro Vision Model with Analytical Question..."
+test_model "$GEMINI_VISION_MODEL" "Pro Vision Model" "Analyze the key components of a lithium-ion battery and explain how they work together to store and release energy."
 
 echo "Testing complete!"
+echo "If you see valid JSON responses above, your API key is working correctly."
+echo "If you see error messages, please check your API key and try again."
