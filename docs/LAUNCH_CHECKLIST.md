@@ -90,6 +90,16 @@ This document outlines the critical steps and verifications required before laun
 - [ ] Set up automated testing
 - [ ] Implement deployment safeguards
 - [ ] Configure production environment
+    - [ ] Verify environment variables for different environments:
+      - [ ] Local development (.env.local): NEXTAUTH_URL=http://localhost:3000
+      - [ ] Production (.env): NEXTAUTH_URL=https://batterybuilds.com
+    - [ ] Set up hosting infrastructure:
+      - [ ] Configure DNS records for batterybuilds.com
+      - [ ] Set up SSL certificates
+      - [ ] Deploy via hosting provider (e.g., Vercel)
+    - [ ] Test production build locally:
+      - [ ] Run `npm run build` successfully
+      - [ ] Verify with `npm run start`
 - [ ] Set up monitoring and alerts
 
 ### Final Checks

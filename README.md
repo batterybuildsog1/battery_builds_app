@@ -4,16 +4,40 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ### Environment Setup
 
-This project requires several environment variables to be set up in a `.env` file at the root of the project. The following variables are required:
+This project uses two environment configuration files:
 
+1. `.env.local` - For local development:
 ```env
 DATABASE_URL=your_database_url
-NEXTAUTH_URL=http://localhost:3000 # In development
+NEXTAUTH_URL=http://localhost:3000
 NEXTAUTH_SECRET=your_nextauth_secret # Generate with: openssl rand -base64 32
 GOOGLE_CLIENT_ID=your_google_client_id
 GOOGLE_CLIENT_SECRET=your_google_client_secret
 GEMINI_API_KEY=your_gemini_api_key
 ```
+
+2. `.env` - For production deployment:
+```env
+DATABASE_URL=your_database_url
+NEXTAUTH_URL=https://batterybuilds.com
+NEXTAUTH_SECRET=your_nextauth_secret
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+GEMINI_API_KEY=your_gemini_api_key
+```
+
+#### Development vs Production Setup
+
+- For local development:
+  - Use `.env.local` with `NEXTAUTH_URL=http://localhost:3000`
+  - This prevents redirection issues when testing authentication locally
+  
+- For production deployment:
+  - Deploy via a hosting platform (e.g., Vercel)
+  - Configure DNS settings for batterybuilds.com
+  - Set up SSL certificates
+  - Update environment variables in the hosting provider's settings panel
+  - Ensure `NEXTAUTH_URL` is set to https://batterybuilds.com
 
 Contact the project administrator for the actual values of these environment variables.
 
