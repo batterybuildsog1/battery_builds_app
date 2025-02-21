@@ -1,14 +1,44 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "../../../../supabaseClient";
+
+interface ManualJResults {
+  staticData: Record<string, any>;
+  dynamicAssumptions: Record<string, any>;
+  manualJResults: Record<string, any>;
+  chartData: Record<string, any>;
+  csvData: string;
+}
+
+interface FileUploadConfig {
+  allowedTypes: string[];
+  maxSizeBytes: number;
+  minSizeBytes: number;
+  errorMessages: {
+    invalidType: string;
+    sizeLimitExceeded: string;
+    sizeTooSmall: string;
+  };
+}
+
+interface ApiErrorResponse {
+  error: string;
+  code: string;
+  details?: string | null;
+  timestamp: string;
+  version_affected?: boolean;
+}
+
 import { runManualJChain } from "@/lib/manualJChain";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../../../../pages/api/auth/[...nextauth]";
 import { loggingService } from "@/lib/services/LoggingService";
+import { environmentService } from "@/lib/services/EnvironmentService";
+import { ErrorCode } from "@/types/errors";
 
 /**
  * Initializes a Manual J calculation process using Gemini AI models:
- * - Uses process.env.GEMINI_REASONING_MODEL for reasoning and calculations
- * - Uses process.env.GEMINI_VISION_MODEL for PDF data extraction and analysis
+ * - Uses environmentService.getConfig().GEMINI_REASONING_MODEL for reasoning and calculations
+ * - Uses environmentService.getConfig().GEMINI_VISION_MODEL for PDF data extraction and analysis
  * 
  * The process includes:
  * 1. Input validation and sanitization
@@ -47,7 +77,9 @@ export async function POST(req: NextRequest) {
         }
       });
     }
-    const location = formData.get("location")?.toString().trim() || "";
+    const location = formData.get("location")?.toString().trim()
+      .replace(/[^\w\s,-]/g, '') // Remove special characters except comma, hyphen, and space
+      .substring(0, 100) || ""; // Limit length
     const pdfFile = formData.get("pdf") as File | null;
 
     // Enhanced input validation with detailed logging
@@ -81,7 +113,10 @@ export async function POST(req: NextRequest) {
         }
       });
     }
-    if (!pdfFile.type.includes('pdf')) {
+    // Get file upload configuration
+    const uploadConfig = environmentService.getFileUploadConfig();
+
+    if (!uploadConfig.allowedTypes.includes(pdfFile.type)) {
       console.error("Input validation failed: Invalid file type", {
         providedType: pdfFile.type,
         fileName: pdfFile.name,
@@ -89,8 +124,8 @@ export async function POST(req: NextRequest) {
         timestamp: new Date().toISOString()
       });
       return NextResponse.json({ 
-        error: "Uploaded file must be a PDF.",
-        code: "INVALID_FILE_TYPE",
+        error: uploadConfig.errorMessages.invalidType,
+        code: ErrorCode.INVALID_FILE_TYPE,
         provided: pdfFile.type
       }, { 
         status: 400,
@@ -100,21 +135,40 @@ export async function POST(req: NextRequest) {
       });
     }
     
-    // Validate file size (max 10MB)
-    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB in bytes
-    if (pdfFile.size > MAX_FILE_SIZE) {
-      console.error("File size validation failed", {
+    // Validate file size using upload configuration
+    if (pdfFile.size < uploadConfig.minSizeBytes) {
+      console.error("File size validation failed - file too small", {
         fileName: pdfFile.name,
         fileSize: pdfFile.size,
-        maxSize: MAX_FILE_SIZE,
-        exceededBy: pdfFile.size - MAX_FILE_SIZE,
+        minSize: uploadConfig.minSizeBytes,
         timestamp: new Date().toISOString()
       });
       return NextResponse.json({ 
-        error: "PDF file size exceeds 10MB limit.",
-        code: "FILE_TOO_LARGE",
+        error: uploadConfig.errorMessages.sizeTooSmall,
+        code: ErrorCode.FILE_TOO_SMALL,
         size: pdfFile.size,
-        maxSize: MAX_FILE_SIZE
+        minSize: uploadConfig.minSizeBytes
+      }, { 
+        status: 400,
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+    }
+
+    if (pdfFile.size > uploadConfig.maxSizeBytes) {
+      console.error("File size validation failed - file too large", {
+        fileName: pdfFile.name,
+        fileSize: pdfFile.size,
+        maxSize: uploadConfig.maxSizeBytes,
+        exceededBy: pdfFile.size - uploadConfig.maxSizeBytes,
+        timestamp: new Date().toISOString()
+      });
+      return NextResponse.json({ 
+        error: uploadConfig.errorMessages.sizeLimitExceeded,
+        code: ErrorCode.FILE_TOO_LARGE,
+        size: pdfFile.size,
+        maxSize: uploadConfig.maxSizeBytes
       }, { 
         status: 400,
         headers: {
@@ -301,12 +355,15 @@ export async function POST(req: NextRequest) {
       });
     }
     
-    return NextResponse.json({ 
+    const errorResponse: ApiErrorResponse = {
       error: `Failed to run initial Manual J: ${errorMessage}`,
       code: errorCode,
       details: error.details || null,
       timestamp: new Date().toISOString(),
       version_affected: error.code?.includes('23') ? true : false
+    };
+    
+    return NextResponse.json(errorResponse
     }, { 
       status: statusCode,
       headers: {

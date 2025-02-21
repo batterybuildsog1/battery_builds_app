@@ -4,27 +4,104 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ### Environment Setup
 
-This project uses two environment configuration files:
+This project uses a centralized EnvironmentService to manage configuration and environment variables. The service handles validation, provides defaults where applicable, and ensures consistent configuration across the application.
 
-1. `.env.local` - For local development:
+#### Environment Configuration Files
+
+IMPORTANT: This project strictly uses only two environment files:
+1. `.env` - Contains production values and serves as the base configuration
+2. `.env.local` - Contains local development overrides and inherits from `.env`
+
+Note: `.env.development` is NOT supported and should be removed if present to avoid configuration conflicts.
+
+Key Configuration Rules:
+- Only `.env` and `.env.local` files are recognized
+- All shared variables (except NEXTAUTH_URL) must have identical values in both files
+- Duplicate keys are not allowed within or across files
+- The EnvironmentService enforces these rules at startup
+
+Important Configuration Rules:
+- All shared variables must have identical values in both files
+- Only NEXTAUTH_URL is allowed to differ between environments
+- The EnvironmentService will throw an error if:
+  - Any shared variables have mismatched values
+  - Duplicate keys are found in either file
+  - `.env.development` file is detected
+  - Any unsupported environment files are present
+
+Example configuration showing the required consistency between files:
+
+1. `.env` - Production configuration:
 ```env
-DATABASE_URL=your_database_url
-NEXTAUTH_URL=http://localhost:3000
-NEXTAUTH_SECRET=your_nextauth_secret # Generate with: openssl rand -base64 32
-GOOGLE_CLIENT_ID=your_google_client_id
-GOOGLE_CLIENT_SECRET=your_google_client_secret
+# These values must match in both files
 GEMINI_API_KEY=your_gemini_api_key
-```
+GEMINI_API_ENDPOINT=https://generativelanguage.googleapis.com/v1beta
+GEMINI_REASONING_MODEL=gemini-pro
+GEMINI_VISION_MODEL=gemini-pro-vision
+SUPABASE_URL=your_supabase_project_url
+SUPABASE_ANON_KEY=your_supabase_anon_key
+MAX_FILE_SIZE=26214400
 
-2. `.env` - For production deployment:
-```env
-DATABASE_URL=your_database_url
+# This value is environment-specific
 NEXTAUTH_URL=https://batterybuilds.com
+
+# Other configuration
 NEXTAUTH_SECRET=your_nextauth_secret
 GOOGLE_CLIENT_ID=your_google_client_id
 GOOGLE_CLIENT_SECRET=your_google_client_secret
-GEMINI_API_KEY=your_gemini_api_key
+DATABASE_URL=your_database_url
 ```
+
+2. `.env.local` - Local development configuration:
+```env
+# These values must exactly match .env
+GEMINI_API_KEY=your_gemini_api_key
+GEMINI_API_ENDPOINT=https://generativelanguage.googleapis.com/v1beta
+GEMINI_REASONING_MODEL=gemini-pro
+GEMINI_VISION_MODEL=gemini-pro-vision
+SUPABASE_URL=your_supabase_project_url
+SUPABASE_ANON_KEY=your_supabase_anon_key
+MAX_FILE_SIZE=26214400
+
+# This value can differ for local development
+NEXTAUTH_URL=http://localhost:3000
+
+# Other configuration
+NEXTAUTH_SECRET=your_nextauth_secret
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+DATABASE_URL=your_database_url
+```
+
+Note: The EnvironmentService will throw an error if it detects any mismatched values between the files (except for NEXTAUTH_URL). The error message will indicate which variable has mismatched values and remind you to ensure consistency across both files.
+
+Example error message:
+```
+Error: Environment variable "GEMINI_API_KEY" has different values in .env and .env.local files. Please ensure all shared variables (except NEXTAUTH_URL) have matching values in both files.
+```
+
+#### Environment Variables Reference
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| GEMINI_API_KEY | Yes | - | API key for Google's Gemini AI service |
+| GEMINI_API_ENDPOINT | No | https://generativelanguage.googleapis.com/v1beta | Base endpoint for Gemini API calls |
+| GEMINI_REASONING_MODEL | No | gemini-pro | Model ID for text-based reasoning |
+| GEMINI_VISION_MODEL | No | gemini-pro-vision | Model ID for vision-based tasks |
+| SUPABASE_URL | Yes | - | Your Supabase project URL |
+| SUPABASE_ANON_KEY | Yes | - | Your Supabase anonymous key |
+| MAX_FILE_SIZE | No | 26214400 | Maximum file size in bytes (default: 25MB) |
+
+#### About EnvironmentService
+
+The EnvironmentService provides:
+- Centralized configuration management
+- Runtime validation of environment variables
+- Default values for optional configurations
+- Type-safe access to environment variables
+- Consistent configuration across client and server components
+
+To override default values, simply set the corresponding environment variable in your `.env` or `.env.local` file.
 
 #### Development vs Production Setup
 
@@ -36,10 +113,22 @@ GEMINI_API_KEY=your_gemini_api_key
   - Deploy via a hosting platform (e.g., Vercel)
   - Configure DNS settings for batterybuilds.com
   - Set up SSL certificates
-  - Update environment variables in the hosting provider's settings panel
+  - Update all environment variables in the hosting provider's settings panel
   - Ensure `NEXTAUTH_URL` is set to https://batterybuilds.com
+  - Verify all required environment variables are properly set
+  - Test file upload functionality with production MAX_FILE_SIZE setting
 
 Contact the project administrator for the actual values of these environment variables.
+
+#### Environment Validation
+
+The EnvironmentService performs validation checks on startup:
+- Verifies presence of required environment variables
+- Validates format of URLs and API keys
+- Ensures MAX_FILE_SIZE is a valid number
+- Checks model names against allowed values
+
+If any validation fails, the application will log appropriate error messages and may prevent startup to avoid runtime issues.
 
 ### Dependency Management and Troubleshooting
 
@@ -421,6 +510,144 @@ When deploying to Vercel:
 3. Ensure your production domain is properly set in NEXTAUTH_URL
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## API Routes Documentation
+
+### Protected Routes
+All API routes under `/api/protected/*` require authentication. These endpoints will return a 401 status code if accessed without proper authentication.
+
+### Available Endpoints
+
+#### Manual-J Calculations
+- `POST /api/protected/manual-j/init`
+  - Initiates a new Manual-J calculation
+  - Requires multipart/form-data with PDF file
+  - Max file size: 25MB
+  - Returns: `{ jobId: string, status: string }`
+
+#### Project Management
+- `GET /api/protected/projects`
+  - Lists all projects for authenticated user
+  - Supports pagination: `?page=1&limit=10`
+  - Returns: `{ projects: Project[], total: number }`
+
+- `POST /api/protected/projects`
+  - Creates a new project
+  - Body: `{ name: string, description?: string }`
+  - Returns: Created project object
+
+#### File Management
+- `POST /api/protected/files/upload`
+  - Uploads file(s) to project
+  - Supports multiple files
+  - Validates file types and sizes
+  - Returns: `{ files: UploadedFile[] }`
+
+### Error Responses
+All API endpoints return standardized error responses:
+```typescript
+{
+  error: {
+    code: string,
+    message: string,
+    details?: any
+  }
+}
+```
+
+## Database Schema and Migrations
+
+### Core Tables
+
+#### Users
+```sql
+CREATE TABLE users (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  email VARCHAR(255) UNIQUE NOT NULL,
+  name VARCHAR(255),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+#### Projects
+```sql
+CREATE TABLE projects (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES users(id),
+  name VARCHAR(255) NOT NULL,
+  description TEXT,
+  status project_status DEFAULT 'draft',
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+### Running Migrations
+```bash
+# Apply pending migrations
+npm run migrate:up
+
+# Rollback last migration
+npm run migrate:down
+
+# Create new migration
+npm run migrate:create my_migration_name
+```
+
+## Type Safety and Validation
+
+### Zod Schema Validation
+All API requests and responses are validated using Zod schemas:
+
+```typescript
+// Project schema example
+const ProjectSchema = z.object({
+  name: z.string().min(1).max(255),
+  description: z.string().optional(),
+  status: z.enum(['draft', 'active', 'completed', 'archived'])
+});
+```
+
+### TypeScript Integration
+- All API routes are fully typed
+- Database models have corresponding TypeScript interfaces
+- Frontend components use strict prop typing
+- API response types are shared between frontend and backend
+
+### Error Handling
+
+The application implements a centralized error handling system:
+
+1. API Errors
+```typescript
+class APIError extends Error {
+  constructor(
+    public statusCode: number,
+    public code: string,
+    message: string,
+    public details?: any
+  ) {
+    super(message);
+  }
+}
+```
+
+2. Error Middleware
+```typescript
+export const errorHandler = (err: Error, req: Request, res: Response) => {
+  if (err instanceof APIError) {
+    return res.status(err.statusCode).json({
+      error: {
+        code: err.code,
+        message: err.message,
+        details: err.details
+      }
+    });
+  }
+  // Handle other types of errors...
+};
+```
 
 ## Additional Documentation
 

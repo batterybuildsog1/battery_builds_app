@@ -1,10 +1,15 @@
 import { buildFilePart } from './apiUtils';
+import { EnvironmentService } from '../config/EnvironmentService';
 
-const GEMINI_API_KEY = process.env.GOOGLE_AI_API_KEY;
-const GEMINI_API_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-vision:generateContent';
+const GEMINI_API_KEY = EnvironmentService.get('GOOGLE_AI_API_KEY') || '';
+const GEMINI_API_ENDPOINT = EnvironmentService.get('GEMINI_VISION_ENDPOINT') || 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-vision:generateContent';
 
 export async function processPDF(pdfBuffer: Buffer) {
   try {
+    if (!GEMINI_API_KEY) {
+      throw new Error('Gemini API key is not configured');
+    }
+    
     const filePart = buildFilePart(pdfBuffer, 'application/pdf');
 
     const systemInstruction = `

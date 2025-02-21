@@ -1,54 +1,82 @@
 "use client";
 import React, { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { CloudArrowUpIcon, DocumentIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { CloudArrowUpIcon, DocumentIcon, XMarkIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
+import { FileUploadConfig } from '../../../types/config';
+import { environmentService } from '../../../lib/services/EnvironmentService';
 
 interface FileUploaderProps {
-  accept?: string;
-  maxSize?: number;
+  config?: FileUploadConfig;
   onFileSelect: (file: File) => void;
   onError?: (error: string) => void;
   className?: string;
+  onProgress?: (progress: number) => void;
+  maxRetries?: number;
 }
 
 export const FileUploader: React.FC<FileUploaderProps> = ({
-  accept = "application/pdf",
-  maxSize = 10 * 1024 * 1024, // 10MB default
+  config = environmentService.getFileUploadConfig(),
   onFileSelect,
   onError,
   className = "",
 }) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [error, setError] = useState<string>("");
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [retryCount, setRetryCount] = useState(0);
 
   const validateFile = useCallback((file: File) => {
-    if (!file.type.match(accept)) {
-      const errorMessage = "Please upload a valid PDF file.";
-      setError(errorMessage);
-      onError?.(errorMessage);
+    if (!config.allowedTypes.includes(file.type)) {
+      setError(config.errorMessages.invalidType);
+      onError?.(config.errorMessages.invalidType);
       return false;
     }
 
-    if (file.size > maxSize) {
-      const errorMessage = `File size should be less than ${maxSize / (1024 * 1024)}MB.`;
-      setError(errorMessage);
-      onError?.(errorMessage);
+    if (file.size > config.maxSizeBytes) {
+      setError(config.errorMessages.sizeLimitExceeded);
+      onError?.(config.errorMessages.sizeLimitExceeded);
       return false;
     }
     return true;
-  }, [accept, maxSize, onError, setError]);
+  }, [config, onError]);
 
-  const handleFile = (file: File) => {
+  const handleFile = async (file: File) => {
     setError("");
     if (validateFile(file)) {
-      setSelectedFile(file);
-      onFileSelect(file);
+      try {
+        setIsUploading(true);
+        setUploadProgress(0);
+        
+        // Simulate upload progress
+        const updateProgress = (progress: number) => {
+          setUploadProgress(progress);
+          onProgress?.(progress);
+        };
+
+        // Set the file and notify parent
+        setSelectedFile(file);
+        await onFileSelect(file);
+        
+        setUploadProgress(100);
+        setIsUploading(false);
+      } catch (err) {
+        if (retryCount < (maxRetries || 3)) {
+          setRetryCount(prev => prev + 1);
+          handleFile(file);
+        } else {
+          setError("Upload failed after multiple attempts");
+          onError?.("Upload failed after multiple attempts");
+        }
+      } finally {
+        setIsUploading(false);
+      }
     }
   };
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept: { 'application/pdf': ['.pdf'] },
-    maxSize,
+    maxSize: config.maxSizeBytes,
     multiple: false,
     onDrop: (acceptedFiles) => {
       if (acceptedFiles.length > 0) {
@@ -90,27 +118,44 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
                 Drag building plans here or click to upload
               </p>
               <p className="mt-1 text-xs text-gray-500">
-                PDF files only, up to {maxSize / (1024 * 1024)}MB
+                PDF files only, up to {Math.floor(config.maxSizeBytes / (1024 * 1024))}MB
               </p>
             </>
           ) : (
             <div className="flex items-center justify-between bg-white p-3 rounded-md shadow-sm">
-              <div className="flex items-center">
+              <div className="flex items-center flex-1">
                 <DocumentIcon className="h-6 w-6 text-blue-500 mr-2" />
                 <span className="text-sm text-gray-700 truncate">
                   {selectedFile.name}
                 </span>
+                {isUploading && (
+                  <div className="ml-2 flex items-center">
+                    <ArrowPathIcon className="h-4 w-4 text-blue-500 animate-spin" />
+                    <span className="ml-2 text-sm text-blue-500">{uploadProgress}%</span>
+                  </div>
+                )}
               </div>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  removeFile();
-                }}
-                className="p-1 hover:bg-gray-100 rounded-full transition-colors"
-                aria-label="Remove file"
-              >
-                <XMarkIcon className="h-5 w-5 text-gray-500" />
-              </button>
+              <div className="flex items-center">
+                {uploadProgress < 100 && (
+                  <div className="w-24 h-1 bg-gray-200 rounded-full mr-3">
+                    <div 
+                      className="h-full bg-blue-500 rounded-full transition-all duration-300"
+                      style={{ width: `${uploadProgress}%` }}
+                    />
+                  </div>
+                )}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removeFile();
+                  }}
+                  className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+                  aria-label="Remove file"
+                  disabled={isUploading}
+                >
+                  <XMarkIcon className="h-5 w-5 text-gray-500" />
+                </button>
+              </div>
             </div>
           )}
         </div>
