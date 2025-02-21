@@ -1,17 +1,29 @@
 "use client";
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { CloudArrowUpIcon, DocumentIcon, XMarkIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import { FileUploadConfig } from '../../../types/config';
 import { environmentService } from '../../../lib/services/EnvironmentService';
 
+type FileValidationError = 
+  | 'INVALID_TYPE'
+  | 'SIZE_LIMIT_EXCEEDED'
+  | 'UPLOAD_FAILED'
+  | 'PDF_VERSION_UNSUPPORTED';
+
 interface FileUploaderProps {
   config?: FileUploadConfig;
   onFileSelect: (file: File) => void;
-  onError?: (error: string) => void;
+  onError?: (error: string, type?: FileValidationError) => void;
   className?: string;
   onProgress?: (progress: number) => void;
   maxRetries?: number;
+}
+
+interface FileValidationResult {
+  isValid: boolean;
+  error?: FileValidationError;
+  message?: string;
 }
 
 export const FileUploader: React.FC<FileUploaderProps> = ({
@@ -26,40 +38,90 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
   const [uploadProgress, setUploadProgress] = useState(0);
   const [retryCount, setRetryCount] = useState(0);
 
-  const validateFile = useCallback((file: File) => {
+  useEffect(() => {
+    return () => {
+      // Cleanup on unmount
+      if (selectedFile) {
+        URL.revokeObjectURL(URL.createObjectURL(selectedFile));
+      }
+      setSelectedFile(null);
+      setUploadProgress(0);
+      setError("");
+    };
+  }, []);
+
+  const validateFile = useCallback(async (file: File): Promise<FileValidationResult> => {
     if (!config.allowedTypes.includes(file.type)) {
-      setError(config.errorMessages.invalidType);
-      onError?.(config.errorMessages.invalidType);
-      return false;
+      return {
+        isValid: false,
+        error: 'INVALID_TYPE',
+        message: config.errorMessages.invalidType
+      };
     }
 
     if (file.size > config.maxSizeBytes) {
-      setError(config.errorMessages.sizeLimitExceeded);
-      onError?.(config.errorMessages.sizeLimitExceeded);
-      return false;
+      return {
+        isValid: false,
+        error: 'SIZE_LIMIT_EXCEEDED',
+        message: config.errorMessages.sizeLimitExceeded
+      };
     }
-    return true;
-  }, [config, onError]);
+
+    // Check PDF version if it's a PDF file
+    if (file.type === 'application/pdf') {
+      try {
+        const buffer = await file.arrayBuffer();
+        const view = new Uint8Array(buffer);
+        const header = new TextDecoder().decode(view.slice(0, 8));
+        if (!header.match(/%PDF-1\.[3-7]/)) {
+          return {
+            isValid: false,
+            error: 'PDF_VERSION_UNSUPPORTED',
+            message: 'Unsupported PDF version. Please use PDF version 1.3 or higher.'
+          };
+        }
+      } catch (e) {
+        return {
+          isValid: false,
+          error: 'INVALID_TYPE',
+          message: 'Unable to validate PDF format'
+        };
+      }
+    }
+
+    return { isValid: true };
+  }, [config]);
 
   const handleFile = async (file: File) => {
     setError("");
-    if (validateFile(file)) {
+    const validationResult = await validateFile(file);
+    
+    if (validationResult.isValid) {
       try {
         setIsUploading(true);
         setUploadProgress(0);
         
-        // Simulate upload progress
         const updateProgress = (progress: number) => {
+          if (!isUploading) return; // Prevent updates if component is unmounting
           setUploadProgress(progress);
           onProgress?.(progress);
         };
 
-        // Set the file and notify parent
         setSelectedFile(file);
-        await onFileSelect(file);
         
-        setUploadProgress(100);
-        setIsUploading(false);
+        // Create cleanup function for the FileReader
+        const reader = new FileReader();
+        const cleanupReader = () => {
+          reader.abort();
+          reader.onloadend = null;
+        };
+
+        try {
+          await onFileSelect(file);
+          updateProgress(100);
+        } finally {
+          cleanupReader();
+        }
       } catch (err) {
         if (retryCount < (maxRetries || 3)) {
           setRetryCount(prev => prev + 1);
@@ -102,6 +164,10 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
     <div className={`w-full ${className}`}>
       <div
         {...getRootProps()}
+        role="button"
+        tabIndex={0}
+        aria-label={selectedFile ? "File upload area. File selected." : "Drop file here or click to upload"}
+        aria-describedby={error ? "upload-error" : undefined}
         className={`relative border-2 border-dashed rounded-lg p-6 transition-all duration-200 ease-in-out
           ${isDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400'}
           ${error ? 'border-red-500 bg-red-50' : ''}
@@ -162,10 +228,18 @@ export const FileUploader: React.FC<FileUploaderProps> = ({
       </div>
       
       {error && (
-        <p className="mt-2 text-sm text-red-600" role="alert">
+        <p 
+          id="upload-error"
+          className="mt-2 text-sm text-red-600" 
+          role="alert"
+          aria-live="polite"
+        >
           {error}
         </p>
       )}
+      <div className="sr-only" aria-live="polite">
+        {isUploading && `Upload progress: ${uploadProgress}%`}
+      </div>
     </div>
   );
 };
